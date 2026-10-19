@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>快樂學英文＆數學 — 國小三~六年級學習遊戲</title>
+  <meta name="description" content="適用於台灣國小三到六年級的英文單字與數學四則運算學習遊戲，對齊 108 課綱。" />
+  <!-- 線上時載入圓體字型；離線時自動回落到系統字型 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <h1>🎮 快樂學英文＆數學</h1>
+      <p>給國小三～六年級小朋友的學習小遊戲</p>
+    </header>
+
+    <!-- 首頁 -->
+    <section id="screen-home" class="screen active">
+      <div id="home-content"></div>
+    </section>
+
+    <!-- 遊戲畫面 -->
+    <section id="screen-game" class="screen">
+      <div class="topbar">
+        <button class="btn-back" id="back-btn">← 回首頁</button>
+        <div class="hud">
+          <span class="chip blue" id="hud-score">⭐ 0</span>
+          <span class="chip red" id="hud-lives">❤️ ❤❤❤</span>
+          <span class="chip green" id="hud-prog">準備開始</span>
+        </div>
+      </div>
+      <h2 class="section-title" id="game-title">遊戲</h2>
+      <div id="game-content"></div>
+    </section>
+  </div>
+
+  <!-- 腳本：依序載入（非模組，相容 file:// 雙擊開啟） -->
+  <script src="assets/data.js"></script>
+  <script src="assets/english.js"></script>
+  <script src="assets/math.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

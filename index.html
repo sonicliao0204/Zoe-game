@@ -5,13 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>快樂學英文＆數學 — 國小三~六年級學習遊戲</title>
   <meta name="description" content="適用於台灣國小三到六年級的英文單字與數學四則運算學習遊戲，對齊 108 課綱。" />
+  <meta name="theme-color" content="#2563EB" />
+  <!-- PWA：可加入主畫面、離線快取 -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
   <!-- 線上時載入圓體字型；離線時自動回落到系統字型 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
-<body>
+  <body>
+  <!-- 固定靜音開關：隨時可用，方便家長在安靜環境關閉音效 -->
+  <button class="mute-btn" id="mute-btn" title="音效開關">🔊</button>
+
   <div class="wrap">
     <header class="site-header">
       <h1>🎮 快樂學英文＆數學</h1>
@@ -45,5 +52,13 @@
   <script src="assets/english.js"></script>
   <script src="assets/math.js"></script>
   <script src="assets/app.js"></script>
+  <!-- PWA：註冊 service worker（僅在 https / localhost 環境生效，file:// 下安全忽略） -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("service-worker.js").catch(function () { /* 註冊失敗不影響遊戲 */ });
+      });
+    }
+  </script>
 </body>
 </html>

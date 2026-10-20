@@ -287,7 +287,10 @@ const MATH = {
     // 代數
     { lv: 3, fn: () => { const x = ri(2, 9); const s = 2 * x + ri(3, 10); const b = s - 2 * x; return { q: `2 × □ + ${b} = ${s}，□ = ?`, a: String(x), ex: "先減常數，再除以 2。" }; } },
     // 統計
-    { lv: 3, fn: () => { const a = ri(3, 10), b = ri(3, 10), c = ri(3, 10); return { q: `三次得分 ${a}、${b}、${c}，平均是幾？（四捨五入）`, a: String(Math.round((a + b + c) / 3)), ex: "平均 = 總和 ÷ 次數。" }; } }
+    { lv: 3, fn: () => { const a = ri(3, 10), b = ri(3, 10), c = ri(3, 10); return { q: `三次得分 ${a}、${b}、${c}，平均是幾？（四捨五入）`, a: String(Math.round((a + b + c) / 3)), ex: "平均 = 總和 ÷ 次數。" }; } },
+    // 因數與倍數（五年級核心）
+    { lv: 2, fn: () => { const pairs = [[12, 18, 6], [8, 12, 4], [15, 20, 5], [9, 15, 3], [16, 24, 8]]; const p = pick(pairs); return { q: `${p[0]} 和 ${p[1]} 的最大公因數是幾？`, a: String(p[2]), ex: "找同時能整除兩數的最大數。" }; } },
+    { lv: 2, fn: () => { const base = pick([3, 4, 5, 6, 7]); const n = pick([2, 3, 4]); return { q: `${base} 的 ${n} 倍是幾？它也是 ${base} 的幾倍數？`, a: String(base * n), ex: "倍數 = 底數 × 倍。" }; } }
   ],
   // 六年級
   6: [
@@ -308,7 +311,10 @@ const MATH = {
     // 代數應用
     { lv: 3, fn: () => { const x = ri(2, 9); const s = 3 * x - ri(2, 9); const b = 3 * x - s; return { q: `3 × □ - ${b} = ${s}，□ = ?`, a: String(x), ex: "先還原常數，再除以 3。" }; } },
     // 機率與統計
-    { lv: 3, fn: () => { const total = pick([2, 4, 5, 10]); const want = ri(1, total - 1); return { q: `袋子有 ${total} 球，其中 ${want} 個紅球，摸到紅球的機率是幾分之幾？`, a: `${want}/${total}`, ex: "機率 = 想要的÷總數。" }; } }
+    { lv: 3, fn: () => { const total = pick([2, 4, 5, 10]); const want = ri(1, total - 1); return { q: `袋子有 ${total} 球，其中 ${want} 個紅球，摸到紅球的機率是幾分之幾？`, a: `${want}/${total}`, ex: "機率 = 想要的÷總數。" }; } },
+    // 速率與比例應用（六年級核心）
+    { lv: 2, fn: () => { const t = pick([2, 3, 4]); const s = pick([60, 90, 120, 150]); return { q: `爸爸開車 ${t} 小時走了 ${s * t} 公里，平均時速是幾公里？`, a: String(s), ex: "時速 = 路程 ÷ 時間。" }; } },
+    { lv: 2, fn: () => { const v = pick([40, 60, 80]); const t = pick([2, 3, 5]); return { q: `小華騎車以每秒 ${v} 公尺的速度騎了 ${t} 秒，共騎了幾公尺？`, a: String(v * t), ex: "距離 = 速度 × 時間。" }; } }
   ]
 };
 

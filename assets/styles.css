@@ -481,10 +481,118 @@ body {
   to { transform: translateY(105vh) rotate(540deg); opacity: .2; }
 }
 
+/* 防誤觸：停用按鈕雙擊縮放 */
+button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+/* 固定靜音開關 */
+.mute-btn {
+  position: fixed;
+  top: 12px; right: 12px;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  z-index: 70;
+  display: flex; align-items: center; justify-content: center;
+}
+.mute-btn.off { opacity: .7; }
+.mute-btn:active { transform: scale(.92); }
+
+/* 連擊橫幅：高連擊加大 */
+.combo-banner.big { font-size: clamp(44px, 12vw, 88px); padding: 18px 40px; }
+
+/* 選項內的小喇叭（點擊單字發音） */
+.opt-speak {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 8px; font-size: 16px; cursor: pointer; opacity: .75;
+}
+.opt-speak:hover { opacity: 1; }
+
+/* 草稿紙 Canvas 塗鴉板 */
+.scratch-toggle {
+  display: inline-block;
+  margin: 4px auto 10px;
+  background: #FFF7ED; border: 2px solid var(--orange); color: var(--orange);
+  border-radius: 999px; padding: 8px 18px; font-weight: 800; font-size: 15px; cursor: pointer;
+}
+.scratch-overlay {
+  position: fixed; inset: 0; display: none;
+  align-items: center; justify-content: center;
+  background: rgba(15, 23, 42, .45); z-index: 80; padding: 16px;
+}
+.scratch-panel {
+  background: #fff; border-radius: 20px; padding: 14px;
+  width: min(92vw, 520px); box-shadow: var(--shadow);
+}
+.scratch-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 800; font-size: 18px; color: var(--navy); margin-bottom: 8px;
+}
+.scratch-c {
+  width: 100%; height: 220px; display: block;
+  background: #fff; border: 2px solid var(--line); border-radius: 12px;
+  touch-action: none; cursor: crosshair;
+}
+.scratch-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
+.scratch-btn {
+  padding: 10px 18px; border-radius: 999px; border: 2px solid var(--blue);
+  background: #EFF6FF; color: var(--blue-d); font-weight: 800; cursor: pointer;
+}
+.scratch-x { border: none; background: transparent; font-size: 22px; cursor: pointer; color: var(--muted); }
+
+/* 復活（訂正）模式 */
+.revive-box {
+  text-align: center;
+  background: linear-gradient(150deg, #FFF7ED, #FFEDD5);
+  border: 3px solid var(--orange); border-radius: 20px; padding: 18px;
+  animation: pop .3s ease;
+}
+.revive-title { font-size: 20px; font-weight: 800; color: var(--orange); margin-bottom: 10px; }
+
+/* 錯題回顧（結算頁） */
+.review-box {
+  margin-top: 16px; background: #F8FAFC; border: 1px solid var(--line);
+  border-radius: 16px; padding: 14px; text-align: left;
+}
+.review-title { font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+.review-item { border-bottom: 1px dashed var(--line); padding: 8px 0; }
+.review-item:last-child { border-bottom: none; }
+.rq { font-weight: 700; color: var(--navy); }
+.ra { color: var(--green); font-weight: 800; margin-top: 2px; }
+.rex { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+/* 收集冊（虛擬寵物配件） */
+.coll-box { text-align: center; }
+.pet-row { font-size: 40px; margin: 6px 0 12px; min-height: 48px; line-height: 1.1; }
+.pet-row .muted { font-size: 16px; color: var(--muted); }
+.coll-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 12px; }
+.coll { border: 2px solid var(--line); border-radius: 16px; padding: 12px 8px; background: #fff; }
+.coll.on { border-color: var(--yellow); background: #FEFCE8; box-shadow: 0 6px 16px rgba(250,204,21,.25); }
+.coll.off { opacity: .6; filter: grayscale(.5); }
+.coll-emoji { font-size: 34px; line-height: 1; }
+.coll-name { font-weight: 800; font-size: 14px; margin-top: 4px; color: var(--navy); }
+.coll-need { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.coll-bar { height: 8px; background: #E2E8F0; border-radius: 999px; margin-top: 6px; overflow: hidden; }
+.coll-bar span { display: block; height: 100%; background: linear-gradient(90deg, #2563EB, #22C55E); }
+
+/* 錯題本（首頁） */
+.wrong-box { text-align: left; }
+.wrong-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.wrong-item {
+  display: flex; justify-content: space-between; gap: 10px;
+  background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 8px 10px;
+}
+.wrong-item .wq { font-weight: 700; color: var(--navy); }
+.wrong-item .wa { color: var(--green); font-weight: 800; white-space: nowrap; }
+
 /* 響應式：手機/小平板 */
 @media (max-width: 560px) {
   .subject-grid { grid-template-columns: 1fr; }
   .options { grid-template-columns: 1fr; }
   .q-pic { font-size: 76px; }
   .grade-pill { min-width: 100px; font-size: 17px; }
+  .mute-btn { top: 8px; right: 8px; width: 44px; height: 44px; }
 }

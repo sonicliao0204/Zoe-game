@@ -1,56 +1,113 @@
 /* =========================================================================
- * 英文遊戲：看圖選字（Emoji 圖示 → 選正確英文單字）
- *  - 依年級載入單字庫（來自 data.js 的 GAME_DATA.EN_WORDS）
- *  - 每回合 10 題，四選一，含 Web Speech API 英文發音
- *  - 計分、星星、鼓勵回饋，進度存 localStorage
+ * 英文遊戲：看圖選字 / 聽力拼字 / 句型選詞 / 閱讀理解
+ * 依年級載入內容（來自 data.js 的 GAME_DATA）
+ *  - 每回合 10 題，混合四種題型，四（或六）選一，含 Web Speech API 英文發音
+ *  - 難度：簡單=4選1隨機干擾；普通/困難=4/6選1且用近似單字當干擾
+ *  - 模式：休閒（無限時）/ 計時（每題倒數）
+ *  - 連擊 combo>=3 得分加倍；連擊>=2 有機率掉落「刪去一半」道具
+ *  - 計分、星星、徽章統計，進度與統計皆存 localStorage
  * ========================================================================= */
 (function () {
   const D = window.GAME_DATA;
+  const E = window.ENGINE;
   const TOTAL = 10;
+  const BASE = 10;
 
   let state = null;
 
-  function speak(word) {
+  function speak(text) {
     try {
       if (!("speechSynthesis" in window)) return;
       window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(word);
+      const u = new SpeechSynthesisUtterance(text);
       u.lang = "en-US";
       u.rate = 0.9;
       window.speechSynthesis.speak(u);
     } catch (e) { /* 發音失敗不影響遊戲 */ }
   }
 
-  function start(grade) {
-    const bank = D.EN_WORDS[grade];
+  function start(grade, difficulty, mode) {
+    difficulty = difficulty || "normal";
+    mode = mode || "casual";
+    E.resetCombo();
+    E.resetItems();
     state = {
-      grade,
-      bank,
-      idx: 0,
-      score: 0,
-      questions: buildQuestions(bank)
+      grade, difficulty, mode,
+      idx: 0, correct: 0, points: 0, maxCombo: 0,
+      answered: false, current: null, timerId: null,
+      questions: buildQuestions(grade, difficulty)
     };
     renderQuestion();
   }
 
-  function buildQuestions(bank) {
+  /* ---------- 題目建構：混合四種題型 ---------- */
+  function pickDistractors(bank, correct, count, difficulty) {
+    const pool = bank.filter(w => w.w !== correct);
+    let candidates;
+    if (difficulty === "easy") {
+      candidates = shuffle(pool);
+    } else {
+      const close = pool.filter(w =>
+        Math.abs(w.w.length - correct.length) <= 1 || w.w[0] === correct[0]);
+      candidates = close.length >= count ? shuffle(close) : shuffle(pool);
+    }
+    return candidates.slice(0, count).map(w => w.w);
+  }
+
+  // 拼字錯誤選項：隨機改變一個非空白字母
+  function wrongSpell(word) {
+    const idxs = [];
+    for (let i = 0; i < word.length; i++) if (word[i] !== " ") idxs.push(i);
+    if (idxs.length < 4) return null;
+    const i = idxs[ri(0, idxs.length - 1)];
+    const c = word[i];
+    const letters = "abcdefghijklmnopqrstuvwxyz";
+    let nc = c; while (nc === c) nc = letters[ri(0, 25)];
+    const arr = word.split(""); arr[i] = nc;
+    const s = arr.join("");
+    return s === word ? null : s;
+  }
+
+  function buildQuestions(grade, difficulty) {
+    const optionsCount = difficulty === "hard" ? 6 : 4;
+    const wordBank = D.EN_WORDS[grade];
+    const sentBank = D.EN_SENTENCES[grade] || [];
+    const readBank = D.EN_READING[grade] || [];
+    const types = ["pic", "spell", "sentence", "reading"];
     const qs = [];
-    const pool = bank.slice();
-    for (let i = 0; i < TOTAL && pool.length; i++) {
-      const correct = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-      // 干擾項：從同字庫隨抽 3 個不同單字
-      const others = bank.filter(w => w.w !== correct.w);
-      const wrongs = [];
-      const tmp = others.slice();
-      for (let j = 0; j < 3 && tmp.length; j++) {
-        wrongs.push(tmp.splice(Math.floor(Math.random() * tmp.length), 1)[0].w);
+    for (let i = 0; i < TOTAL; i++) {
+      let t = types[Math.floor(Math.random() * types.length)];
+      if (t === "sentence" && !sentBank.length) t = "pic";
+      if (t === "reading" && !readBank.length) t = "pic";
+
+      if (t === "pic") {
+        const correct = wordBank[Math.floor(Math.random() * wordBank.length)];
+        const distractors = pickDistractors(wordBank, correct.w, optionsCount - 1, difficulty);
+        const options = shuffle([correct.w, ...distractors]).slice(0, optionsCount);
+        qs.push({ type: "pic", pic: correct.e, a: correct.w, zh: correct.z, options });
+      } else if (t === "spell") {
+        const correct = wordBank[Math.floor(Math.random() * wordBank.length)];
+        const wrongs = [];
+        let guard = 0;
+        while (wrongs.length < optionsCount - 1 && guard < 30) {
+          const w = wrongSpell(correct.w);
+          if (w && !wrongs.includes(w) && w !== correct.w) wrongs.push(w);
+          guard++;
+        }
+        const options = shuffle([correct.w, ...wrongs]).slice(0, optionsCount);
+        qs.push({ type: "spell", a: correct.w, zh: correct.z, options });
+      } else if (t === "sentence") {
+        const s = sentBank[Math.floor(Math.random() * sentBank.length)];
+        qs.push({ type: "sentence", s: s.s, a: s.a, options: shuffle(s.opts.slice()), ex: s.ex });
+      } else { // reading
+        const r = readBank[Math.floor(Math.random() * readBank.length)];
+        qs.push({ type: "reading", text: r.text, q: r.q, a: r.a, options: shuffle(r.opts.slice()) });
       }
-      const options = shuffle([correct.w, ...wrongs]).slice(0, 4);
-      qs.push({ pic: correct.e, word: correct.w, zh: correct.z, options });
     }
     return qs;
   }
 
+  function ri(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
   function shuffle(a) {
     const arr = a.slice();
     for (let i = arr.length - 1; i > 0; i--) {
@@ -60,44 +117,96 @@
     return arr;
   }
 
-  function renderQuestion() {
-    const q = state.questions[state.idx];
-    const root = document.getElementById("game-content");
-    root.innerHTML = `
-      <div class="q-area">
-        <div class="q-pic" id="qp">${q.pic}</div>
-        <button class="speak-btn" id="speak">🔊 聽發音</button>
-        <div class="q-text">這個圖案是什麼英文？</div>
-      </div>
-      <div class="options" id="opts">
-        ${q.options.map((o, i) => `<button class="option" data-w="${o}">${o}</button>`).join("")}
-      </div>
-      <div class="feedback" id="fb"></div>
-    `;
-    document.getElementById("speak").onclick = () => speak(q.word);
-    speak(q.word); // 自動發音一次
+  function questionMs() {
+    if (state.difficulty === "hard") return 12000;
+    if (state.difficulty === "easy") return 18000;
+    return 15000;
+  }
 
-    document.querySelectorAll("#opts .option").forEach(btn => {
-      btn.onclick = () => choose(btn, q);
-    });
+  /* ---------- 題目渲染（依題型） ---------- */
+  function renderQuestion() {
+    if (state.timerId) { state.timerId.stop(); state.timerId = null; }
+    state.answered = false;
+    const q = state.questions[state.idx];
+    state.current = q;
+    const root = document.getElementById("game-content");
+    const timerHtml = state.mode === "timed" ? '<div class="timer"><div class="timer-bar" id="tbar"></div></div>' : "";
+    const optsHtml = `<div class="options" id="opts">${q.options.map(o => `<button class="option" data-w="${o}">${o}</button>`).join("")}</div>`;
+
+    let promptHtml = "";
+    if (q.type === "pic") {
+      promptHtml = `
+        <div class="q-area">
+          <div class="q-pic" id="qp">${q.pic}</div>
+          <button class="speak-btn" id="speak">🔊 聽發音</button>
+          <div class="q-text">這個圖案是什麼英文？</div>
+        </div>`;
+      if (state.mode === "timed") speak(q.a);
+    } else if (q.type === "spell") {
+      promptHtml = `
+        <div class="q-area">
+          <div class="q-text">🔊 聽發音，選出正確拼法（${q.zh}）</div>
+          <button class="speak-btn" id="speak">🔊 再聽一次</button>
+        </div>`;
+      speak(q.a);
+    } else if (q.type === "sentence") {
+      promptHtml = `
+        <div class="q-area">
+          <div class="q-text passage">${q.s.replace("___", "＿＿＿＿")}</div>
+          <button class="speak-btn" id="speak">🔊 聽句子</button>
+          <div class="q-text small">選出空白處正確的詞</div>
+        </div>`;
+      speak(q.s.replace("___", q.a));
+    } else { // reading
+      promptHtml = `
+        <div class="q-area">
+          <div class="q-text passage">${q.text}</div>
+          <div class="q-text">${q.q}</div>
+        </div>`;
+    }
+
+    root.innerHTML = promptHtml + timerHtml + optsHtml +
+      `<div class="items" id="items"></div><div class="feedback" id="fb"></div>`;
+
+    const speakBtn = document.getElementById("speak");
+    if (speakBtn) {
+      if (q.type === "pic" || q.type === "spell") speakBtn.onclick = () => speak(q.a);
+      else if (q.type === "sentence") speakBtn.onclick = () => speak(q.s.replace("___", q.a));
+    }
+
+    document.querySelectorAll("#opts .option").forEach(btn => { btn.onclick = () => choose(btn); });
+    renderItems();
+    if (state.mode === "timed") state.timerId = E.startTimer(questionMs(), () => onTimeout());
     updateHud();
   }
 
-  function choose(btn, q) {
+  function choose(btn) {
+    if (state.answered) return;
+    state.answered = true;
+    if (state.timerId) { state.timerId.stop(); state.timerId = null; }
+    const q = state.current;
     const buttons = document.querySelectorAll("#opts .option");
     buttons.forEach(b => b.disabled = true);
     const fb = document.getElementById("fb");
-    if (btn.dataset.w === q.word) {
+    if (btn.dataset.w === q.a) {
       btn.classList.add("correct");
-      state.score++;
+      state.correct++;
+      const combo = E.bumpCombo();
+      if (combo > state.maxCombo) state.maxCombo = combo;
+      const gain = E.pointsForCorrect(BASE);
+      state.points += gain;
       fb.className = "feedback ok";
-      fb.textContent = `✅ 答對了！${q.z} = ${q.word}`;
-      speak(q.word);
+      fb.textContent = q.type === "reading" ? "✅ 答對了！" : `✅ 答對了！${q.a}`;
+      if (q.type === "pic" || q.type === "spell") speak(q.a);
+      if (combo >= 3) E.comboBanner(combo);
+      const dropped = E.maybeDropItem({ canHeal: false });
+      if (dropped) { E.toast(`🎁 獲得道具：${E.ITEMS[dropped].name}！`); renderItems(); }
     } else {
       btn.classList.add("wrong");
-      buttons.forEach(b => { if (b.dataset.w === q.word) b.classList.add("correct"); });
+      buttons.forEach(b => { if (b.dataset.w === q.a) b.classList.add("correct"); });
+      E.breakCombo();
       fb.className = "feedback no";
-      fb.textContent = `❌ 正確是 ${q.word}（${q.z}）`;
+      fb.textContent = `❌ 正確是 ${q.a}`;
     }
     updateHud();
     setTimeout(() => {
@@ -107,48 +216,90 @@
     }, 1100);
   }
 
+  function onTimeout() {
+    if (state.answered) return;
+    state.answered = true;
+    if (state.timerId) { state.timerId.stop(); state.timerId = null; }
+    const q = state.current;
+    const buttons = document.querySelectorAll("#opts .option");
+    buttons.forEach(b => b.disabled = true);
+    const fb = document.getElementById("fb");
+    E.breakCombo();
+    fb.className = "feedback no";
+    fb.textContent = `⏰ 時間到！正確是 ${q.a}`;
+    updateHud();
+    setTimeout(() => {
+      state.idx++;
+      if (state.idx >= state.questions.length) finish();
+      else renderQuestion();
+    }, 1300);
+  }
+
   function updateHud() {
-    document.getElementById("hud-score").textContent = `⭐ ${state.score}/${TOTAL}`;
+    document.getElementById("hud-score").textContent = `⭐ ${state.points}`;
     document.getElementById("hud-prog").textContent = `第 ${Math.min(state.idx + 1, TOTAL)} / ${TOTAL} 題`;
+    const combo = E.getCombo();
+    const cc = document.getElementById("hud-combo");
+    if (combo >= 2) { cc.style.display = "inline-block"; cc.textContent = `🔥 x${combo}`; }
+    else cc.style.display = "none";
+  }
+
+  // 道具欄位渲染與使用
+  function renderItems() {
+    const box = document.getElementById("items");
+    if (!box) return;
+    const inv = E.getInventory();
+    if (!inv.length) { box.innerHTML = ""; return; }
+    box.innerHTML = `<div class="items-label">🎒 我的道具：</div>` +
+      inv.map(t => `<button class="item-btn" data-t="${t}">${E.ITEMS[t].emoji} ${E.ITEMS[t].name}</button>`).join("");
+    box.querySelectorAll(".item-btn").forEach(b => { b.onclick = () => useItem(b.dataset.t); });
+  }
+
+  function useItem(type) {
+    if (!E.hasItem(type)) return;
+    if (type === "fifty") {
+      const ok = E.useFifty(document.querySelectorAll("#opts .option"), state.current.a, "w");
+      if (!ok) { E.toast("沒有可刪除的選項"); return; }
+      E.consumeItem(type);
+      E.toast("🔆 已刪除一個錯誤選項！");
+      renderItems();
+    }
   }
 
   function finish() {
-    const score = state.score;
+    if (state.timerId) { state.timerId.stop(); state.timerId = null; }
+    const score = state.correct;
     const pct = score / TOTAL;
     const stars = pct >= 0.9 ? 3 : pct >= 0.6 ? 2 : pct >= 0.3 ? 1 : 0;
+    const perfect = score === TOTAL && TOTAL > 0;
+    const res = E.recordRound("en", {
+      correct: score, total: TOTAL, points: state.points,
+      bestCombo: state.maxCombo, perfect
+    });
     const msg = stars === 3 ? "太厲害了！全部都會！" :
                 stars === 2 ? "很棒！再練一下更厲害！" :
                 stars === 1 ? "不錯喔，繼續加油！" : "多聽多練，你一定可以的！";
     saveProgress(state.grade, "en", stars);
-    confetti();
+    E.confetti();
+    const badgeHtml = res.newlyUnlocked.length
+      ? `<div class="badge-pop">🎉 解鎖新徽章：${res.newlyUnlocked.map(b => `${b.emoji} ${b.name}`).join("　")}</div>`
+      : "";
     const root = document.getElementById("game-content");
     root.innerHTML = `
       <div class="card result-card">
         <div class="big-emoji">${stars === 3 ? "🏆" : stars >= 1 ? "🌟" : "💪"}</div>
         <h2>${msg}</h2>
-        <div class="score">得分 ${score} / ${TOTAL}　${"⭐".repeat(stars)}${"☆".repeat(3 - stars)}</div>
+        <div class="score">答對 ${score} / ${TOTAL}　得分 ⭐ ${state.points}　最高連擊 x${state.maxCombo}</div>
+        <div class="score">${"⭐".repeat(stars)}${"☆".repeat(3 - stars)}</div>
+        ${badgeHtml}
         <div class="result-actions">
           <button class="btn primary" id="again">再玩一次</button>
           <button class="btn ghost" id="home">回到首頁</button>
         </div>
       </div>`;
-    document.getElementById("again").onclick = () => start(state.grade);
+    document.getElementById("again").onclick = () => start(state.grade, state.difficulty, state.mode);
     document.getElementById("home").onclick = () => window.APP.goHome();
-    document.getElementById("hud-score").textContent = `⭐ ${score}/${TOTAL}`;
-  }
-
-  function confetti() {
-    const colors = ["#2563EB", "#16A34A", "#FACC15", "#EA580C", "#DC2626"];
-    for (let i = 0; i < 60; i++) {
-      const c = document.createElement("div");
-      c.className = "confetti";
-      c.style.left = Math.random() * 100 + "vw";
-      c.style.background = colors[i % colors.length];
-      c.style.animationDuration = (2 + Math.random() * 2) + "s";
-      c.style.animationDelay = (Math.random() * 0.6) + "s";
-      document.body.appendChild(c);
-      setTimeout(() => c.remove(), 4200);
-    }
+    document.getElementById("hud-score").textContent = `⭐ ${state.points}`;
   }
 
   function saveProgress(grade, subject, stars) {

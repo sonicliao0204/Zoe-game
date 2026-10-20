@@ -224,6 +224,7 @@ body {
 .hud .chip.blue { color: var(--blue-d); }
 .hud .chip.green { color: var(--green); }
 .hud .chip.red { color: var(--red); }
+.hud .chip.orange { color: var(--orange); background: #FFF7ED; border: 1px solid #FED7AA; }
 
 /* 題目區 */
 .q-area { text-align: center; padding: 10px 4px 18px; }
@@ -256,6 +257,18 @@ body {
   margin-top: 6px;
 }
 .speak-btn:hover { background: #DBEAFE; }
+
+/* 句型/閱讀短文 */
+.q-text.passage {
+  font-size: clamp(17px, 3.6vw, 22px);
+  line-height: 1.7;
+  text-align: left;
+  background: #F8FAFC;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+.q-text.small { font-size: 16px; color: var(--muted); font-weight: 700; margin-top: 4px; }
 
 /* 選項 */
 .options {
@@ -317,6 +330,21 @@ body {
 .btn.green { background: var(--green); }
 .btn.ghost { background: #fff; color: var(--navy); border: 2px solid var(--line); }
 
+/* 數學困難模式：限時條 */
+.timer {
+  height: 12px;
+  background: #E2E8F0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 4px 0 12px;
+}
+.timer-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #22C55E, #FACC15, #DC2626);
+  transition: width .1s linear;
+}
+
 /* 用途說明 / 來源 */
 .note {
   font-size: 13px;
@@ -328,6 +356,114 @@ body {
   margin-top: 8px;
 }
 .note b { color: var(--navy); }
+
+/* 連擊橫幅 Combo banner（全螢幕中央彈出） */
+.combo-banner {
+  position: fixed;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(.4);
+  font-size: clamp(34px, 9vw, 64px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 3px 0 #EA580C, 0 0 18px rgba(250, 204, 21, .9);
+  background: linear-gradient(90deg, #FB923C, #FACC15);
+  padding: 14px 30px;
+  border-radius: 999px;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s ease, transform .25s cubic-bezier(.2,1.4,.5,1);
+}
+.combo-banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.combo-banner.pop-out { opacity: 0; transform: translate(-50%, -50%) scale(1.3); transition: opacity .25s ease, transform .25s ease; }
+
+/* 道具提示 Toast */
+.toast {
+  position: fixed;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--navy);
+  color: #fff;
+  font-weight: 800;
+  font-size: 17px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* 道具欄 */
+.items { margin: 8px 0 2px; min-height: 8px; }
+.items-label { font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+.item-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFF7ED;
+  border: 2px solid var(--orange);
+  color: var(--orange);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  margin: 4px 6px 0 0;
+  transition: transform .1s ease, filter .1s ease;
+}
+.item-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+/* 被道具刪除的選項：變淡不可點 */
+.option.dimmed { opacity: .35; cursor: default; text-decoration: line-through; }
+
+/* 徽章牆 */
+.badge-box { text-align: center; }
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+.badge {
+  border-radius: var(--radius-sm);
+  padding: 14px 10px;
+  border: 2px solid var(--line);
+  background: #fff;
+}
+.badge.on { border-color: var(--yellow); background: #FEFCE8; box-shadow: 0 6px 16px rgba(250, 204, 21, .25); }
+.badge.off { opacity: .55; filter: grayscale(.6); }
+.badge-emoji { font-size: 38px; line-height: 1; }
+.badge-name { font-size: 16px; font-weight: 800; color: var(--navy); margin-top: 6px; }
+.badge-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.stats-line {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  background: #F8FAFC;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+/* 解鎖徽章提示（結果頁） */
+.badge-pop {
+  margin: 14px auto 0;
+  max-width: 420px;
+  background: linear-gradient(90deg, #FEF3C7, #FDE68A);
+  border: 2px solid var(--yellow);
+  color: #92400E;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  animation: bounce .5s ease;
+}
 
 /* 灑花 */
 .confetti {

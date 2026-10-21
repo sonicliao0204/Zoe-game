@@ -42,7 +42,7 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
   function defaultStats() {
-    return { rounds: 0, totalCorrect: 0, enCorrect: 0, maCorrect: 0, bestScore: 0, bestCombo: 0,
+    return { rounds: 0, totalCorrect: 0, enCorrect: 0, maCorrect: 0, phCorrect: 0, bestScore: 0, bestCombo: 0,
              perfect: 0, totalStars: 0, lastDay: "", dayStreak: 0 };
   }
   function loadStats() {
@@ -61,7 +61,9 @@
     const s = Object.assign(defaultStats(), loadStats());
     s.rounds += 1;
     s.totalCorrect += data.correct;
-    if (subject === "en") s.enCorrect += data.correct; else s.maCorrect += data.correct;
+    if (subject === "en") s.enCorrect += data.correct;
+    else if (subject === "ph") s.phCorrect += data.correct;
+    else s.maCorrect += data.correct;
     if (data.points > s.bestScore) s.bestScore = data.points;
     if (data.bestCombo > s.bestCombo) s.bestCombo = data.bestCombo;
     if (data.perfect) s.perfect += 1;

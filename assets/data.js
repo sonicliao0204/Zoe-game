@@ -326,8 +326,38 @@ function makeMathProblem(grade, maxLevel) {
   return pick(pool).fn();
 }
 
+/* =========================================================================
+ * 自然發音（Phonics）題庫：以 CVC（子音-母音-子音）基礎字為主，對齊 108 課綱
+ * 中年級（三~四年級）「字母拼讀 / 字音對應」素養。每筆：{ w: 英文字, e: emoji,
+ * grp: 押韻家族, first: 字首字母（聲音） }。遊戲題型由 phonics.js 依此生成。
+ * ========================================================================= */
+const PHONICS = [
+  { w: "cat",  e: "🐱", grp: "at", first: "C" },
+  { w: "hat",  e: "🎩", grp: "at", first: "H" },
+  { w: "bat",  e: "🦇", grp: "at", first: "B" },
+  { w: "mat",  e: "🟫", grp: "at", first: "M" },
+  { w: "dog",  e: "🐶", grp: "og", first: "D" },
+  { w: "log",  e: "🪵", grp: "og", first: "L" },
+  { w: "frog", e: "🐸", grp: "og", first: "F" },
+  { w: "pig",  e: "🐷", grp: "ig", first: "P" },
+  { w: "wig",  e: "💇", grp: "ig", first: "W" },
+  { w: "fig",  e: "🍒", grp: "ig", first: "F" },
+  { w: "sun",  e: "☀️", grp: "un", first: "S" },
+  { w: "run",  e: "🏃", grp: "un", first: "R" },
+  { w: "cup",  e: "🥤", grp: "up", first: "C" },
+  { w: "pup",  e: "🐾", grp: "up", first: "P" },
+  { w: "bug",  e: "🐛", grp: "ug", first: "B" },
+  { w: "rug",  e: "🟥", grp: "ug", first: "R" },
+  { w: "pen",  e: "🖊️", grp: "en", first: "P" },
+  { w: "ten",  e: "🔟", grp: "en", first: "T" },
+  { w: "box",  e: "📦", grp: "ox", first: "B" },
+  { w: "fox",  e: "🦊", grp: "ox", first: "F" },
+  { w: "pet",  e: "🐹", grp: "et", first: "P" },
+  { w: "net",  e: "🕸️", grp: "et", first: "N" }
+];
+
 /* 匯出給其他腳本（以全域變數方式，因靜態站不使用模組以相容 file:// 雙擊開啟） */
 window.GAME_DATA = {
-  EN_WORDS, EN_SENTENCES, EN_READING, MATH,
+  EN_WORDS, EN_SENTENCES, EN_READING, MATH, PHONICS,
   makeMathProblem, buildOptions, ri, pick, shuffle
 };
